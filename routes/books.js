@@ -1,6 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const books = require('../schemas/book')
+const jwt = require('jsonwebtoken')
+const middleware = require('../middleware/middleware')
+const JWT_SECRET = process.env.secret
 
 router.post('/', async (req, res)=>{
     switch (req.body.command) {
@@ -42,13 +45,19 @@ router.post('/', async (req, res)=>{
     }
 })
 
-router.get('/getbooks', async(req, res)=>{
-    let allBooks = await books.find()
-    let array = []
-    for (let i = 0;i<allBooks.length;i++) {
-        array.push(allBooks[i].name)
-    }
-    res.json(array)
+router.post('/getbooks', async(req, res)=>{
+})
+router.post('/getbooks', middleware, async(req, res)=>{
+    console.log("Hi")
+    const data = jwt.verify(req.header('token'), JWT_SECRET)
+    let findBooks = await books.find()
+    res.json(findBooks)
+    console.log(findBooks)
+    // try{
+    // }
+    // catch{
+    //     res.send("Please a valid token")
+    // }
 })
 
 module.exports = router
