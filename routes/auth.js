@@ -13,7 +13,7 @@ router.post('/member', async (req, res)=>{
         case 'create':
             let m = await member.findOne({email:req.body.email.toString()})
             if (m){
-                return res.json({error:"Sorry a user with this email already exists"})
+                return res.json({error:"Email"})
             }
             const salt = await bcrypt.genSalt(10)
             const secPass = await bcrypt.hash(req.body.password.toString(), salt)
