@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const JWT_SECRET = "Books$helves"
+const JWT_SECRET = process.env.secret
 
 const middleware = async(req, res, next)=>{
     const token = await req.header('auth-token')
@@ -7,8 +7,8 @@ const middleware = async(req, res, next)=>{
         res.status(401).send({error: "Please give a token"})
     }
     try{
-        const data = jwt.verify(token, JWT_SECRET)
-        // req.user = data.user
+        const data = await jwt.verify(token, JWT_SECRET)
+        req.user = data.user
         next()
     }
     catch(error){

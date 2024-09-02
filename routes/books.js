@@ -1,63 +1,73 @@
 const express = require('express')
 const router = express.Router()
 const books = require('../schemas/book')
+const members = require('../schemas/member')
 const jwt = require('jsonwebtoken')
 const middleware = require('../middleware/middleware')
 const JWT_SECRET = process.env.secret
 
-router.post('/', async (req, res)=>{
-    switch (req.body.command) {
-        case 'create':
-            let book = await books.create({
-                "name":req.body.name
-            })
-            res.json(book)
-            break;
-
-        case 'changeBorrow':
-            let b = await books.findById(req.body.id.toString())
-            if(!b){
-                return res.status(400).send("NotFound")
-            }
-            if(b._id!=req.body.id){
-                return res.status(400).send("Not found")
-            }
-            b = await books.findByIdAndUpdate(req.body.id.toString(), {$set:{borrower:req.body.user.toString()}}, {new:true})
-            res.send("Done")
-            break;
-
-        case 'del':
-            let m1 = await books.findById(req.body.id.toString())
-            // console.log(m1)
-            if(!m1){
-                return res.status(400).json({error:'NotFound'})
-            }
-            if(m1._id!=req.body.id){
-                return res.status(400).json({error:"NotFound"})
-            }
-            m1 = await books.findByIdAndDelete(req.body.id)
-            res.send("Deleted")
-            break;
-            
-        default:
-            console.log("Something else this is")
-            break;
+router.post('/create', async (req, res)=>{
+    let book = await books.create({
+        "name":req.body.name
+    })
+    res.json(book)
+})
+router.post('/update', async(req, res)=>{
+    const token = jwt.verify(req.header('auth-token'), JWT_SECRET)
+    let m1 = await books.findByIdAndUpdate(req.body.id.toString(), {$set:{name:req.body.name.toString()}}, {new:true})
+    res.json({msg:"success"})
+})
+router.post('/delete/:id', async(req, res)=>{
+    const token = jwt.verify(req.header('auth-token'), JWT_SECRET)
+    if(!token){
+        return res.json({error:"invalid"})
     }
+    console.log(req.params.id)
+    let m1 = await books.findById(req.params.id)
+    if(!m1){
+        return res.status(400).json({error:'NotFound'})
+    }
+    if(m1._id!=req.params.id){
+        return res.status(400).json({error:"NotFound"})
+    }
+    m1 = await books.findByIdAndDelete(req.params.id)
+    res.json({msg:"Deleted"})
 })
 
-router.post('/getbooks', async(req, res)=>{
+
+router.post('/borrow/:id/:user',async(req, res)=>{
+    let auth = await jwt.verify(req.params.user, JWT_SECRET)
+    let member = await members.findById(auth.user)
+    if(!member){
+        res.send({error:"User"})
+    }
+    b = await books.findByIdAndUpdate(req.params.id, {$set:{borrower:auth.user}}, {new:true})
+    b = await books.find({borrower:req.body.user})
+    res.json(b)
 })
+
+router.post('/borrowed/:id',async(req, res)=>{
+    let auth = await jwt.verify(req.params.id, JWT_SECRET)
+    let book = await books.find({borrower:auth.user})
+    res.json(book)
+})
+
+router.post('/return/:id/:user',async(req, res)=>{
+    let auth = await jwt.verify(req.params.user, JWT_SECRET)
+    let member = await members.findById(auth.user)
+    if(!member){
+        res.send({error:"User"})
+    }
+    b = await books.findByIdAndUpdate(req.params.id, {$set:{borrower:"null"}}, {new:true})
+    b = await books.find({borrower:req.body.user})
+    res.json(b)
+})
+
 router.post('/getbooks', middleware, async(req, res)=>{
-    console.log("Hi")
-    const data = jwt.verify(req.header('token'), JWT_SECRET)
     let findBooks = await books.find()
     res.json(findBooks)
-    console.log(findBooks)
-    // try{
-    // }
-    // catch{
-    //     res.send("Please a valid token")
-    // }
 })
+
+
 
 module.exports = router
