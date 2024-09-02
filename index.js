@@ -6,7 +6,7 @@ const app = express()
 app.use(express.json())
 connect();
 app.use(cors({
-    origin: "https://librarybackend-v0v9.onrender.com"
+    origin: "https://libraryt.netlify.app/"
 }))
 app.use('/api/auth/', require('./routes/auth'))
 app.use('/api/books/', require('./routes/books'))
